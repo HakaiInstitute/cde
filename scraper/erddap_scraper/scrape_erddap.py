@@ -44,6 +44,19 @@ def max_min_url(erddap_url, dataset_id, two_vars, max_min):
     return res
 
 
+def count_url(erddap_url, dataset_id, two_vars, time_interval=None):
+    # quote only needed for old erddap instances (ONC)
+    orderByCount_variable_list = ",".join(two_vars[:-1])
+    if time_interval:
+        orderByCount_variable_list += ',time/'+time_interval
+    # Generate URL
+    url = f"{erddap_url}/tabledap/{dataset_id}.csv?{','.join(two_vars)}" + urllib.parse.quote(
+        f'&orderByCount("{orderByCount_variable_list}")'
+    )
+    res = erddap_csv_to_df(url)
+    return res
+
+
 def get_profile_ids(erddap_url, dataset_id, profile_variable):
     if not profile_variable:
         return None
@@ -73,6 +86,7 @@ def get_max_min_stats(
         profile_count = profile_ids.size
 
     data = pd.DataFrame()
+    get_count = True
     for field in fields:
         two_vars = ",".join([x for x in [profile_variable, field] if x])
 
@@ -91,6 +105,17 @@ def get_max_min_stats(
             profile_min[profile_variable] = dataset_id
             profile_max[profile_variable] = dataset_id
 
+        if get_count:
+            if profile_variable:
+                profile_n_records = count_url(erddap_url, dataset_id, [profile_variable, field])
+                profile_n_records = profile_n_records.rename({field: 'record_count'}, axis='columns')
+            else:
+                profile_n_records = count_url(erddap_url, dataset_id, [])
+                profile_n_records = profile_n_records.rename({fields[0]: 'record_count'}, axis='columns')
+                profile_n_records[profile_variable] = dataset_id
+
+            profile_n_records.set_index(profile_variable, inplace=True)
+
         profile_max.set_index(profile_variable, inplace=True)
         profile_min.set_index(profile_variable, inplace=True)
 
@@ -98,6 +123,10 @@ def get_max_min_stats(
         field_max_min = profile_min.join(
             profile_max, how="left", lsuffix="_min", rsuffix="_max"
         )
+        if get_count:
+            field_max_min = field_max_min.join(profile_n_records['record_count'], how="left")
+            get_count = False
+
         # thread_log(field_max_min)
         if data.empty:
             data = field_max_min
@@ -245,6 +274,7 @@ def scrape_erddap(erddap_url, result):
         "server",
         "dataset_id",
         "cdm_data_type",
+        "record_count",
         "time_min",
         "time_max",
         "latitude_min",
