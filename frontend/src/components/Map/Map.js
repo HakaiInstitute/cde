@@ -1,6 +1,7 @@
 import { Map, NavigationControl } from "maplibre-gl";
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import geojsonData from '../Map/geojsonData';
 
 export default function createMap() {
 
@@ -60,6 +61,7 @@ export default function createMap() {
       },
       );
     map.addLayer({
+      minzoom: 5,
       id: "internal-layer-name",
       type: "circle",
 
@@ -74,6 +76,49 @@ export default function createMap() {
         "circle-opacity": 0.75,
       },
     });
+
+  // hexagons
+  const sourceId = 'h3-hexes';
+  const layerId = `${sourceId}-layer`;
+  const config = ({
+    lng: -124.4,
+    lat: 50.7923539,
+    zoom: 5,
+    fillOpacity: .8,
+    colorScale: ['#ffffD9', '#50BAC3', '#1A468A']
+  })
+  map.addSource(sourceId, {
+    type: 'geojson',
+    data: geojsonData
+  });
+
+  map.addLayer({
+    id: layerId,
+    source: sourceId,
+    type: 'fill',
+    // maxzoom: 7,
+    maxzoom: 5,
+    interactive: false,
+    paint: {
+      'fill-outline-color': 'rgba(0,0,0,0)'
+    }
+  });
+
+  const source = map.getSource(sourceId);
+
+  // Update the geojson data
+  source.setData(geojsonData);
+
+  // Update the layer paint properties, using the current config values
+  map.setPaintProperty(layerId, 'fill-color', {
+    property: 'value',
+    stops: [
+      [0, config.colorScale[0]],
+      [0.5, config.colorScale[1]],
+      [1, config.colorScale[2]]
+    ]
+  });
+
 
    
   });
