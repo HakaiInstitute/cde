@@ -6,6 +6,7 @@ import shapely.wkt
 from shapely.geometry import Point
 
 import pandas as pd
+import xarray as xr
 
 import requests
 import re
@@ -166,6 +167,8 @@ def filter_polygon_region(file_path, polygone):
     :param file_path: path to the file data.
     :param polygone: Polygone region to use
     """
+    def is_in_polygon(lon, lat):
+        return polygone.contains(Point(lon, lat))
 
     # Determinate the type of data
     file_type = file_path.split(".")[-1]
@@ -186,7 +189,7 @@ def filter_polygon_region(file_path, polygone):
         # Exclude data outside the polygon
         df = df.loc[
             df.apply(
-                lambda x: polygone.contains(Point(x.longitude, x.latitude)), axis=1
+                lambda x: is_in_polygon(x.longitude, x.latitude), axis=1
             )
         ]
 
@@ -195,6 +198,19 @@ def filter_polygon_region(file_path, polygone):
             f.write(columns_name)
             f.write(columns_units)
             df.to_csv(f, index=False, header=False, line_terminator="\n")
+
+    elif file_type in ['nc', 'ncCF']:
+        # Load NetCDF format
+        ds = xr.open_dataset(file_path)
+
+        # Identify data within polygon
+        within_polygon = xr.apply_ufunc(is_in_polygon, ds.longitude, ds.latitude, vectorize=True)
+
+        # Filter only data within polygon
+        ds_filt = ds.load().where(within_polygon, drop=True)
+
+        # Save back to netcdf
+        ds_filt.to_netcdf(file_path)
     else:
         warnings.warn(
             "Polygon filtration is not compatible with {0} format".format(file_type)
