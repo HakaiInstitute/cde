@@ -44,6 +44,54 @@ def max_min_url(erddap_url, dataset_id, two_vars, max_min):
     return res
 
 
+def get_erddap_data_table(
+        erddap_url,
+        dataset_id='allDatasets',
+        metadata=None,
+        output_format="csv",
+        variables=[],
+        groupby=[],
+        aggregator=None,
+        distinct=None,
+        groupby_time=None,
+        get_dataframe=True,
+):
+    # Transform string inputs to list
+    if type(variables) is str:
+        variables = [variables]
+    if type(groupby) is str:
+        groupby = [groupby]
+
+    # Start with erddap server link
+    url = erddap_url
+
+    # Add dataset id and get metadata if requested
+    if metadata:
+        url += f"/tabledap/{dataset_id}/index.{output_format}"
+    else :
+        url += f"/tabledap/{dataset_id}.{output_format}"
+
+    # Add list of variables selected
+    if variables:
+        url += f"?{'%2C'.join(variables)}"
+
+    # Aggregate by specified method
+    if aggregator:
+        # Special case by time
+        if groupby_time:
+            groupby+=[f"time/{groupby_time}"]
+        url+= f"&{aggregator}(%22{'%2C'.join(groupby)}%22)"
+    # Add distinct flag
+    if distinct:
+        url += "&distinct()"
+
+    # Return pandas dataframe if output_format is csv and get_dataframe is True
+    if output_format == "csv" and get_dataframe:
+        return erddap_csv_to_df(url)
+    else:
+        return url
+
+
 def count_url(erddap_url, dataset_id, two_vars, time_interval=None):
     # quote only needed for old erddap instances (ONC)
     orderByCount_variable_list = ",".join(two_vars[:-1])
