@@ -275,19 +275,27 @@ def scrape_erddap(erddap_url, result):
             # thread_log(cdm_data_type)
 
             # Get the profile variable for each dataset
-            cdm_mapping = {
-                "TimeSeries": "cdm_timeseries_variables",
-                "Profile": "cdm_profile_variables",
-                # "Trajectory": "cdm_trajectory_variables",
-                "TimeSeriesProfile": "cdm_timeseries_variables"  # not cdm_profile_variables
-                # "Point":"cdm_profile_variables",
-            }
-            profile_variable = None
+            # cdm_mapping = {
+            #     "TimeSeries": "cdm_timeseries_variables",
+            #     "Profile": "cdm_profile_variables",
+            #     # "Trajectory": "cdm_trajectory_variables",
+            #     "TimeSeriesProfile": "cdm_timeseries_variables"  # not cdm_profile_variables
+            #     # "Point":"cdm_profile_variables",
+            # }
+            # profile_variable = None
 
-            if cdm_data_type in cdm_mapping:
-                profile_variable = safe_list_get(
-                    dataset_globals[cdm_mapping[cdm_data_type]].split(","), 0, ""
-                )
+            # Retrieve subset variables by collecting cf_role variables
+            subset_variables = []
+            cf_role = {}
+            for key, attributes in dataset_variables.items():
+                if 'cf_role' in attributes:
+                    cf_role[key] = attributes['cf_role']
+                    subset_variables.append(key)
+
+            # if cdm_data_type in cdm_mapping:
+            #     profile_variable = safe_list_get(
+            #         dataset_globals[cdm_mapping[cdm_data_type]].split(","), 0, ""
+            #     )
             # these are the variables we are pulling max/min values for   
             important_vars = [
                 "latitude",
@@ -301,12 +309,15 @@ def scrape_erddap(erddap_url, result):
             # thread_log("getting profiles")
             profile_table_record = get_max_min_stats(
                 erddap_url,
-                profile_variable,
+                subset_variables,
                 dataset_id,
                 important_vars_in_dataset,
                 cdm_data_type,
                 dataset_variables,
             )
+
+            # Rename cf_role variables by their cf_role
+            profile_table_record = profile_table_record.reset_index().rename(columns=cf_role)
 
             # profile_stats["cdm_data_type"] = cdm_data_type
             profile_table_record["dataset_id"] = dataset_id
