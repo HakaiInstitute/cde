@@ -114,7 +114,7 @@ def get_profile_ids(erddap_url, dataset_id, profile_variable):
 
 
 def get_max_min_stats(
-    erddap_url, profile_variable, dataset_id, fields, cdm_data_type, metadata
+    erddap_url, subset_variable, dataset_id, fields, cdm_data_type, metadata, get_count = True
 ):
     """
     Get max/min stats for each profile in a dataset
@@ -125,54 +125,65 @@ def get_max_min_stats(
     they only use one profile per dataset
 
     """
+    if type(subset_variable) is str:
+        subset_variable = [subset_variable]
 
     # number of profiles in this dataset (eg by counting unique profile_id)
-    profile_ids = get_profile_ids(erddap_url, dataset_id, profile_variable)
-    profile_count = 0
+    profile_ids = get_erddap_data_table(
+        erddap_url, dataset_id=dataset_id, variables=subset_variable, distinct=True
+    )
 
+    profile_count = 0
     if profile_ids is not None:
         profile_count = profile_ids.size
 
     data = pd.DataFrame()
-    get_count = True
     for field in fields:
-        two_vars = ",".join([x for x in [profile_variable, field] if x])
-
+        group_vars = subset_variable + [field]
+        
+        # Get Min Max
         if profile_count == 1 and "actual_range" in metadata[field]:
-            profile_id = profile_ids.iloc[0][profile_variable]
             print("Using actual_range")
-            [min, max] = metadata[field]["actual_range"].split(",")
-            profile_min = pd.DataFrame({profile_variable: [profile_id], field: [min]})
-            profile_max = pd.DataFrame({profile_variable: [profile_id], field: [max]})
+            profile_min, profile_max = profile_ids.copy(), profile_ids.copy()
+            profile_min[field], profile_max[field] = metadata[field]["actual_range"].split(",")
         else:
-            profile_min = max_min_url(erddap_url, dataset_id, two_vars, "Min")
-            profile_max = max_min_url(erddap_url, dataset_id, two_vars, "Max")
+            profile_min = get_erddap_data_table(
+                erddap_url, dataset_id=dataset_id, variables=group_vars, aggregator="orderByMin", groupby=group_vars
+            )
+            profile_max = get_erddap_data_table(
+                erddap_url, dataset_id=dataset_id, variables=group_vars, aggregator="orderByMax", groupby=group_vars
+            )
 
-        if not profile_variable:
+        if not subset_variable:
             # Probably a Point or Other. Treat it as a single profile
-            profile_min[profile_variable] = dataset_id
-            profile_max[profile_variable] = dataset_id
+            profile_min[subset_variable] = dataset_id
+            profile_max[subset_variable] = dataset_id
+
+        profile_max.set_index(subset_variable, inplace=True)
+        profile_min.set_index(subset_variable, inplace=True)
 
         if get_count:
-            if profile_variable:
-                profile_n_records = count_url(erddap_url, dataset_id, [profile_variable, field])
+            if subset_variable:
+                profile_n_records = get_erddap_data_table(
+                    erddap_url, dataset_id=dataset_id, variables=group_vars,
+                    aggregator='orderByCount', groupby=subset_variable
+                )
                 profile_n_records = profile_n_records.rename({field: 'record_count'}, axis='columns')
             else:
-                profile_n_records = count_url(erddap_url, dataset_id, [])
+                profile_n_records = get_erddap_data_table(
+                    erddap_url, dataset_id=dataset_id, variables=field, aggregator='orderByCount'
+                )
                 profile_n_records = profile_n_records.rename({fields[0]: 'record_count'}, axis='columns')
-                profile_n_records[profile_variable] = dataset_id
+                profile_n_records[subset_variable] = dataset_id
 
-            profile_n_records.set_index(profile_variable, inplace=True)
-
-        profile_max.set_index(profile_variable, inplace=True)
-        profile_min.set_index(profile_variable, inplace=True)
+            profile_n_records.set_index(subset_variable, inplace=True)
 
         # join this field's max and min
         field_max_min = profile_min.join(
             profile_max, how="left", lsuffix="_min", rsuffix="_max"
         )
         if get_count:
-            field_max_min = field_max_min.join(profile_n_records['record_count'], how="left")
+            field_max_min = field_max_min.join(profile_n_records['record_count'], how="left", rsuffix='_count')
             get_count = False
 
         # thread_log(field_max_min)
