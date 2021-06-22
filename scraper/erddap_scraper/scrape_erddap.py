@@ -88,22 +88,20 @@ def get_max_min_stats(
 
         if not profile_variable:
             # Probably a Point or Other. Treat it as a single profile
-            profile_min[profile_variable] = dataset_id
-            profile_max[profile_variable] = dataset_id
+            field_max_min = profile_min.add_suffix('_min').merge(profile_max.add_suffix('_max'), left_index=True, right_index=True)
+        else:
+            # join this field's max and min
+            field_max_min = profile_ids\
+                .merge(profile_min.reset_index(), on=profile_variable, how='outer').rename(columns={field: field + '_min'})\
+                .merge(profile_max.reset_index(), on=profile_variable, how='outer').rename(columns={field: field + '_max'}) \
+                .drop(columns=['index_x', 'index_y']).set_index(profile_variable)
 
-        profile_max.set_index(profile_variable, inplace=True)
-        profile_min.set_index(profile_variable, inplace=True)
-
-        # join this field's max and min
-        field_max_min = profile_min.join(
-            profile_max, how="left", lsuffix="_min", rsuffix="_max"
-        )
         # thread_log(field_max_min)
         if data.empty:
             data = field_max_min
         else:
             # join the different max/min fields within the dataset
-            data = data.join(field_max_min)
+            data = data.join(field_max_min, how='outer')
     return data
 
 
