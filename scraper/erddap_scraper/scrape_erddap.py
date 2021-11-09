@@ -60,7 +60,7 @@ def scrape_erddap(erddap_url, result, dataset_ids=None):
         if dataset_ids and dataset_id not in dataset_ids:
             continue
 
-        datasetHTMLForm=erddap_url + "/tabledap/" + dataset_id + ".html"
+        datasetHTMLForm = erddap_url + "/tabledap/" + dataset_id + ".html"
 
         thread_log("Querying dataset:", dataset_id, f"{i+1}/{len(datasets)}")
 
@@ -106,14 +106,21 @@ def scrape_erddap(erddap_url, result, dataset_ids=None):
 
             # Get the profile variable for each dataset
             cdm_mapping = {
+                "Point": None,
                 "TimeSeries": "timeseries_id",
                 "Profile": "profile_id",
                 # "Trajectory": "cdm_trajectory_variables",
                 "TimeSeriesProfile": "profile_id"  # not cdm_profile_variables
                 # "Point":"cdm_profile_variables",
             }
+
             if cdm_data_type not in cdm_mapping.keys():
-                thread_log("cdm_data_type:",cdm_data_type, "is not in",list(cdm_mapping.keys()))
+                thread_log(
+                    "cdm_data_type:",
+                    cdm_data_type,
+                    "is not in",
+                    list(cdm_mapping.keys()),
+                )
                 datasets_not_added.append(datasetHTMLForm)
                 continue
 

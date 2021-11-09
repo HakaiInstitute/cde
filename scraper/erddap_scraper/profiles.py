@@ -31,11 +31,10 @@ def erddap_csv_to_df(url):
         return pd.DataFrame()
     elif (
         response.status_code == 500
-        and "Your query produced no matching results"
-        in response.text
+        and "Your query produced no matching results" in response.text
     ):
         return pd.DataFrame()
-    
+
     elif (
         response.status_code == 500
         and "You are requesting too much data." in response.text
@@ -99,6 +98,10 @@ def get_profiles(erddap_url, profile_variable, dataset_id, fields, metadata):
     for cf_role in cf_roles:
         if cf_role in profile_variable:
             profile_variable_list += [profile_variable[cf_role]]
+
+    if profile_variable_list == []:
+        profile_variable = {"latitude": "latitude", "longitude": "longitude"}
+        profile_variable_list = ["latitude", "longitude"]
 
     # number of profiles in this dataset (eg by counting unique profile_id)
     profile_records = get_profile_ids(
