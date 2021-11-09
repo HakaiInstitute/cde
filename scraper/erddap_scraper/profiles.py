@@ -99,9 +99,22 @@ def get_profiles(erddap_url, profile_variable, dataset_id, fields, metadata):
         if cf_role in profile_variable:
             profile_variable_list += [profile_variable[cf_role]]
 
+    # For cdm_data_type == Points
     if profile_variable_list == []:
-        profile_variable = {"latitude": "latitude", "longitude": "longitude"}
-        profile_variable_list = ["latitude", "longitude"]
+        profile_variable_list = ['latitude','longitude']
+        if 'time' in metadata:
+            profile_variable_list += ['time']
+        if 'depth' in metadata:
+            profile_variable_list += ['depth']
+        profile_records = get_profile_ids(erddap_url,dataset_id,','.join(profile_variable_list))
+
+        # Format data
+        profile_records = profile_records.groupby(['latitude','longitude']).agg(['min','max','count'])
+        profile_records.columns = ['_'.join(var) for var in profile_records.columns]
+        profile_records['n_records'] = profile_records.filter(like='_count').max(axis='columns')
+        profile_records.drop(labels=['time_count','depth_count'], axis='columns',errors='ignore', inplace=True)
+
+        return profile_records
 
     # number of profiles in this dataset (eg by counting unique profile_id)
     profile_records = get_profile_ids(
