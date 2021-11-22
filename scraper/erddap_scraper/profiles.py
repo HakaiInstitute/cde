@@ -101,17 +101,8 @@ def get_profiles(erddap_url, profile_variable, dataset_id, fields, metadata):
 
     # For cdm_data_type == Points
     if profile_variable_list == []:
-        profile_variable_list = ['latitude','longitude']
-        if 'time' in metadata:
-            profile_variable_list += ['time']
-        if 'depth' in metadata:
-            profile_variable_list += ['depth']
-        profile_records = get_profile_ids(erddap_url,dataset_id,','.join(profile_variable_list))
-
-        # Format data
-        profile_records = profile_records.join(profile_records,lsuffix='_min',rsuffix='_max')
-        profile_records['n_records'] = 1
-        return profile_records
+        # Retrieve distinct positions latitude,longitude
+        profile_variable_list = ["latitude", "longitude"]
 
     # number of profiles in this dataset (eg by counting unique profile_id)
     profile_records = get_profile_ids(
@@ -177,11 +168,6 @@ def get_profiles(erddap_url, profile_variable, dataset_id, fields, metadata):
         if len(profile_min) == 0 or len(profile_max) == 0:
             print("No data found for ", dataset_id)
             return None
-
-        if not profile_variable:
-            # Probably a Point or Other. Treat it as a single profile
-            profile_min[profile_variable] = dataset_id
-            profile_max[profile_variable] = dataset_id
 
         # setting same index so they can be joined more easily
         profile_max.set_index(profile_variable_list, inplace=True)
