@@ -66,3 +66,9 @@ def eovs_to_ceda_eovs(lst):
     for eov in lst:
         out += [ceda_eov_map.loc[eov]["ceda_eov"]]
     return out
+
+def get_ceda_eovs_to_standard_name():
+    """Return CEDA eovs to standard_name mapping. If no GOOS to ceda mapping exist, return GOOS to standard_name mapping term."""
+    return {ceda_eov_map.loc[key]["ceda_eov"]  if key in ceda_eov_map.index else key :value for key,value in get_eov_to_standard_names().items()}
+
+ceda_eovs_to_standard_names = get_ceda_eovs_to_standard_name()

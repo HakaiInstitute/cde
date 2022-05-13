@@ -11,7 +11,7 @@ import pandas as pd
 import requests
 import shapely.wkt
 from erddap_downloader.download_pdf import download_pdf
-from erddap_scraper.utils import eov_to_standard_names
+from erddap_scraper.utils import ceda_eovs_to_standard_names
 from erddapy import ERDDAP
 from shapely.geometry import Point
 
@@ -25,6 +25,7 @@ PARTIAL = "PARTIAL"
 FAILED = "FAILED"
 EMPTY = "EMPTY"
 IGNORED = "IGNORED"
+
 
 
 def erddap_server_to_name(server):
@@ -50,8 +51,8 @@ def get_variable_list(df_variables, eovs: list):
     eov_variables = []
 
     for eov in eovs:
-        if eov in eov_to_standard_names:
-            eov_variables += eov_to_standard_names[eov]
+        if eov in ceda_eovs_to_standard_names:
+            eov_variables += ceda_eovs_to_standard_names[eov]
 
     variables_to_download = df_variables.query(
         "(name in @mandatory_variables) or (standard_name in @eov_variables) or (cf_role != '')"
