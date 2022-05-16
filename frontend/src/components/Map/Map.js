@@ -10,10 +10,10 @@ import './styles.css'
 
 import { server } from '../../config'
 import { createDataFilterQueryString, generateColorStops, getCurrentRangeLevel } from "../../utilities"
-import { colorScale } from "../config"
+import { colorScale, defaultQuery } from "../config"
 
 // Using Maplibre with React: https://documentation.maptiler.com/hc/en-us/articles/4405444890897-Display-MapLibre-GL-JS-map-using-React-JS
-export default function CreateMap({ query, setPointsToReview, setPolygon, setLoading, organizations, datasets, zoom, setZoom, offsetFlyTo, rangeLevels }) {
+export default function CreateMap({ query, setPointsToReview, setPolygon, setLoading, zoom, setZoom, offsetFlyTo, rangeLevels }) {
   const { t } = useTranslation()
   const mapContainer = useRef(null)
   const map = useRef(null)
@@ -137,7 +137,7 @@ export default function CreateMap({ query, setPointsToReview, setPolygon, setLoa
     setPolygon()
     if (map && map.current && map.current.loaded()) {
       map.current.setFilter('points-highlighted', ['in', 'pk', ''])
-      const tileQuery = `${server}/tiles/{z}/{x}/{y}.mvt?${createDataFilterQueryString(query, organizations, datasets)}`
+      const tileQuery = `${server}/tiles/{z}/{x}/{y}.mvt${query !== defaultQuery && `?${createDataFilterQueryString(query)}`}`
 
       map.current.getSource("points").tiles = [tileQuery]
       map.current.getSource("hexes").tiles = [tileQuery]
@@ -160,6 +160,10 @@ export default function CreateMap({ query, setPointsToReview, setPolygon, setLoa
       }
     }
   }, [query])
+
+  const mapZoom = new URL(window.location.href).searchParams.get('zoom')
+  const mapLongitude = new URL(window.location.href).searchParams.get('lon')
+  const mapLatitude = new URL(window.location.href).searchParams.get('lat')
 
   useEffect(() => {
     // If already created don't proceed
@@ -186,8 +190,8 @@ export default function CreateMap({ query, setPointsToReview, setPolygon, setLoa
           },
         ],
       },
-      center: [-125, 49], // starting position
-      zoom: zoom, // starting zoom
+      center: [mapLongitude || -100, mapLatitude || 60], // starting position
+      zoom: mapZoom || zoom, // starting zoom
     })
 
     map.current.on("load", () => {
