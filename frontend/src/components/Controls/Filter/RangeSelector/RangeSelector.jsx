@@ -1,7 +1,6 @@
 import React from "react";
 import PropTypes from 'prop-types'
-import { Range } from "rc-slider";
-import 'rc-slider/assets/index.css';
+import Slider from "rc-slider";
 import './styles.css'
 
 export default class RangeSelector extends React.Component {
@@ -36,7 +35,7 @@ export default class RangeSelector extends React.Component {
   render() {
     return (
       <div className='rangeSelector'>
-        <Range
+        <Slider.Range
           key={this.state.dynamicKey}
           min={0}
           max={12000}
