@@ -47,6 +47,8 @@ services:
       - web-api
     ports:
       - "$NGINX_PORT:4000"
+    networks:
+      - captain-overlay-network
   scheduler:
     build:
       # Scheduler needs context ., see the dockerfile
@@ -90,3 +92,7 @@ services:
 volumes:
   postgres-data:
   redis-data:
+
+networks:
+  captain-overlay-network:
+    external: true
