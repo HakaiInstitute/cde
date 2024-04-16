@@ -92,7 +92,7 @@ services:
 volumes:
   postgres-data:
   redis-data:
-
+   
 networks:
   captain-overlay-network:
     external: true
