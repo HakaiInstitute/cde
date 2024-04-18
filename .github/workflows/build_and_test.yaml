@@ -2,11 +2,13 @@ name: Test
 
 on:
   push:
-    - master
-    - development
+    branches:
+      - master
+      - development
   pull_request:
-    - master
-    - development
+    branches:
+      - master
+      - development
 
 jobs:
   docker:
