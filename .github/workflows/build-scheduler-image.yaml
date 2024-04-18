@@ -9,7 +9,7 @@ on:
         - main
     paths:
         - download_scheduler/**/*
-        - .github/workflows/build-sheduler-image.yaml
+        - .github/workflows/build-scheduler-image.yaml
 
 env:
   REGISTRY: ghcr.io
