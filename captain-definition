@@ -1,0 +1,96 @@
+captainVersion: 4
+caproverOneClickApp:
+    instructions:
+        start: Just a plain Docker Compose.
+        end: Docker Compose is deployed.
+########
+# this version adds Redis (tile cache) and replicas (2x api, 2x downloader)
+version: "3.3"
+services:
+  redis:
+    image: "redis:alpine"
+    expose:
+      - "6379"
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redis-data:/var/lib/redis
+      - ./redis-config/redis.conf:/usr/local/etc/redis/redis.conf
+  db:
+    image: "postgis/postgis:13-3.1-alpine"
+    platform: linux/x86_64
+    ports:
+      - "${DB_PORT:-5432}:${DB_PORT:-5432}"
+    environment:
+      - "PGPORT=${DB_PORT:-5432}"
+      - "POSTGRES_DB=$DB_NAME"
+      - "POSTGRES_PASSWORD=$DB_PASSWORD"
+      - "POSTGRES_USER=$DB_USER"
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database:/docker-entrypoint-initdb.d
+
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "${DB_NAME}", "-U", "${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  web-api:
+    images: gcr.io/hakaiinstitute/cde-web-api:latest
+    expose:
+      - "4000"
+    depends_on:
+      - db
+      - redis
+    deploy:
+      replicas: 2
+    restart: always
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web-api
+    ports:
+      - "$NGINX_PORT:4000"
+  scheduler:
+    images: gcr.io/hakaiinstitute/cde-download-scheduler:latest
+    depends_on:
+      - db
+    deploy:
+      replicas: 2
+    env_file:
+      - .env
+    volumes:
+      - $DOWNLOADS_FOLDER:/usr/src/app/downloads
+    restart: always
+  frontend:
+    image: gcr.io/hakaiinstitute/cde-frontend:latest
+    # build:
+    #   context: ./frontend
+    #   args:
+    #     API_URL: $API_URL
+    expose:
+      - "80"
+    depends_on:
+      - web-api
+
+  harvester:
+    build:
+      context: .
+      dockerfile: ./harvester/Dockerfile
+    profiles:
+      - tools
+    depends_on:
+      - db
+    volumes:
+      - ./harvest_config.yaml:/usr/src/app/harvest_config.yaml
+      - ./harvester_cache:/usr/src/app/harvester_cache
+      - ./harvest:/usr/src/app/harvest
+    environment:
+      - "DB_HOST_EXTERNAL=$DB_HOST_EXTERNAL"
+    env_file:
+      - .env
+volumes:
+  postgres-data:
+  redis-data:
