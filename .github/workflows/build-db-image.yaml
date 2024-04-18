@@ -1,4 +1,4 @@
-name: Create and publish CDE frontend Docker image
+name: Create and publish CDE database Docker image
 
 on:
   push:
