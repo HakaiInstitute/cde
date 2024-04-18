@@ -8,6 +8,7 @@ on:
         - main
     paths:
         - database/**/*
+        - Dockerfile.database
         - .github/workflows/build-database-image.yaml
 
 env:
