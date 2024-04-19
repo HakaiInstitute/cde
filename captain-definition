@@ -8,6 +8,7 @@ services:
     image: ghcr.io/hakaiinstitute/cde-redis:$$cap_branch
     expose:
       - 6379
+  
   $$cap_appname-db:
     image: ghcr.io/hakaiinstitute/cde-database:$$cap_branch
     ports:
@@ -24,6 +25,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  
   $$cap_appname-web-api:
     image: ghcr.io/hakaiinstitute/cde-web-api:$$cap_branch
     expose:
@@ -34,6 +36,7 @@ services:
     deploy:
       replicas: 2
     restart: always
+  
   $$cap_appname-scheduler:
     image: ghcr.io/hakaiinstitute/cde-download-scheduler:$$cap_branch
     depends_on:
@@ -43,13 +46,21 @@ services:
     volumes:
       - $$cap_appname-downloads:/usr/src/app/downloads
     restart: always
+
+  $$cap_appname-nginx:
+    image: ghcr.io/hakaiinstitute/cde-nginx:$$cap_branch
+    depends_on:
+      - $$cap_appname-web-api
+    ports:
+      - "$NGINX_PORT:4000"
+      
   $$cap_appname-frontend:
     image: ghcr.io/hakaiinstitute/cde-frontend:$$cap_branch
     environment:
       - "API_URL=$API_URL:-http://localhost:8098/api}"
       - "BASE_URL=${BASE_URL:-http://localhost:8098}"
     expose:
-      - "80"
+      - 80
     depends_on:
       - $$cap_appname-web-api
 
