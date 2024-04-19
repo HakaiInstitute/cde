@@ -8,9 +8,8 @@ on:
         - development
         - main
     paths:
-        - harvester/**/*
-        - db-loader/**/*
-        - .github/workflows/build-harvester-image.yaml
+        - nginx/**/*
+        - .github/workflows/build-nginx-image.yaml
 
 env:
   REGISTRY: ghcr.io
