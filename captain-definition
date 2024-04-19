@@ -1,50 +1,49 @@
 captainVersion: 4
-caproverOneClickApp:
-  instructions:
-    start: CDE Data Explorer deployment
-    end: Docker Compose is deployed.
+
 ########
 # this version adds Redis (tile cache) and replicas (2x api, 2x downloader)
 version: "3.3"
 services:
-  redis:
-    image: "gcr.io/hakaiinstitute/cde-redis:latest"
-  db:
-    image: "gcr.io/hakaiinstitute/cde-database:latest"
+  $$cap_appname-redis:
+    image: ghcr.io/hakaiinstitute/cde-redis:$$cap_branch
+    expose:
+      - 6379
+  $$cap_appname-db:
+    image: ghcr.io/hakaiinstitute/cde-database:$$cap_branch
     ports:
       - "${DB_PORT:-5432}:${DB_PORT:-5432}"
     environment:
-      - "PGPORT=${DB_PORT:-5432}"
-      - "POSTGRES_DB=${DB_NAME:-cde}"
-      - "POSTGRES_PASSWORD=${DB_PASSWORD:-password}"
-      - "POSTGRES_USER=${DB_USER:-postgres}"
+      - POSTGRES_DB: $$cap_db_name
+      - POSTGRES_USER: $$cap_db_user
+      - POSTGRES_PASSWORD: $$cap_db_password
+      - PGPORT: $$cap_db_port
     healthcheck:
-      test: ["CMD", "pg_isready", "-q", "-d", "${DB_NAME}", "-U", "${DB_USER}"]
+      test: ["CMD", "pg_isready", "-q", "-d", $$cap_db_name, "-U", $$cap_db_user]
       interval: 10s
       timeout: 5s
       retries: 5
-  web-api:
-    images: gcr.io/hakaiinstitute/cde-web-api:latest
+  $$cap_appname-web-api:
+    images: ghcr.io/hakaiinstitute/cde-web-api:$$cap_branch
     expose:
-      - "4000"
+      - 4000
     depends_on:
-      - db
-      - redis
+      - $$cap_appname-db
+      - $$cap_appname-redis
     deploy:
       replicas: 2
     restart: always
-  nginx:
+  $$cap_appname-nginx:
     image: nginx:latest
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - web-api
+      - $$cap_appname-web-api
     ports:
       - "$NGINX_PORT:4000"
-  scheduler:
-    images: gcr.io/hakaiinstitute/cde-download-scheduler:latest
+  $$cap_appname-scheduler:
+    images: ghcr.io/hakaiinstitute/cde-download-scheduler:$$cap_branch
     depends_on:
-      - db
+      - $$cap_appname-db
     deploy:
       replicas: 2
     env_file:
@@ -52,22 +51,22 @@ services:
     volumes:
       - $DOWNLOADS_FOLDER:/usr/src/app/downloads
     restart: always
-  frontend:
-    image: gcr.io/hakaiinstitute/cde-frontend:latest
+  $$cap_appname-frontend:
+    image: ghcr.io/hakaiinstitute/cde-frontend:$$cap_branch
     environment:
       - "API_URL=$API_URL:-http://localhost:8098/api}"
       - "BASE_URL=${BASE_URL:-http://localhost:8098}"
     expose:
       - "80"
     depends_on:
-      - web-api
+      - $$cap_appname-web-api
 
-  harvester:
-    images: gcr.io/hakaiinstitute/cde-harvester:latest
+  $$cap_appname-harvester:
+    images: ghcr.io/hakaiinstitute/cde-harvester:$$cap_branch
     profiles:
       - tools
     depends_on:
-      - db
+      - $$cap_appname-db
     volumes:
       - ./harvest_config.yaml:/usr/src/app/harvest_config.yaml
       - ./harvester_cache:/usr/src/app/harvester_cache
@@ -82,3 +81,42 @@ services:
 volumes:
   postgres-data:
   redis-data:
+
+caproverOneClickApp:
+  displayName: Ocean Data Explorer
+  isOfficial: false
+  description: A map based data explorer for ocean data from the Hakai Institute
+  instructions:
+    start: CDE Data Explorer deployment
+    end: Docker Compose is deployed.
+  variables:
+    - id: $$cap_branch
+      label: Branch
+      description: The branch to deploy
+      type: string
+      default: caprover-deploy
+    - id: $$cap_db_user
+      label: Database User
+      description: The user to connect to the database
+      type: string
+      default: postgres
+    - id: $$cap_db_password 
+      label: Database Password
+      description: The password to connect to the database
+      type: string
+      default: password
+    - id: $$cap_db_name
+      label: Database Name
+      description: The name of the database
+      type: string
+      default: cde
+    - id: $$cap_db_port
+      label: Database Port
+      description: The port to connect to the database
+      type: string
+      default: 5432
+    - id: $$cap_api_url
+      label: API URL
+      description: The URL of the API
+      type: string
+      default: http://localhost:8098/api
