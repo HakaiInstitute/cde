@@ -38,7 +38,7 @@ services:
     image: ghcr.io/hakaiinstitute/cde-download-scheduler:$$cap_branch
     environment:
       ENVIRONMENT: $$cap_appname.$$cap_root_domain
-      DB_HOST: $$cap_appname-db
+      DB_HOST: srv-captain--$$cap_appname
       DB_NAME: $$cap_db_name
       DB_USER: $$cap_db_user
       DB_PASSWORD: $$cap_db_password
@@ -85,12 +85,13 @@ services:
       - $$cap_appname-harvester-cache:/usr/src/app/harvester_cache
       - $$cap_appname-harvest:/usr/src/app/harvest
     environment:
-      - DB_HOST_EXTERNAL: $$cap_appname-db
+      - DB_HOST: srv-captain--$$cap_appname
       - DB_PORT: $$cap_db_port
       - DB_NAME: $$cap_db_name
       - DB_USER: $$cap_db_user
       - DB_PASSWORD: $$cap_db_password
       - ENVIRONMENT: $$cap_appname
+
 volumes:
   postgres-data:
   redis-data:
