@@ -43,12 +43,10 @@ services:
       DB_USER: $$cap_db_user
       DB_PASSWORD: $$cap_db_password
       DB_PORT: $$cap_db_port
-
     depends_on:
       - $$cap_appname-db
     caproverExtra:
       notExposeAsWebApp: 'true'
-      
     deploy:
       replicas: 2
     volumes:
