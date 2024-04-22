@@ -36,8 +36,19 @@ services:
   
   $$cap_appname-scheduler:
     image: ghcr.io/hakaiinstitute/cde-download-scheduler:$$cap_branch
+    environment:
+      ENVIRONMENT: $$cap_appname.$$cap_root_domain
+      DB_HOST: $$cap_appname-db
+      DB_NAME: $$cap_db_name
+      DB_USER: $$cap_db_user
+      DB_PASSWORD: $$cap_db_password
+      DB_PORT: $$cap_db_port
+
     depends_on:
       - $$cap_appname-db
+    caproverExtra:
+      notExposeAsWebApp: 'true'
+      
     deploy:
       replicas: 2
     volumes:
