@@ -1,7 +1,4 @@
 captainVersion: 4
-
-########
-# this version adds Redis (tile cache) and replicas (2x api, 2x downloader)
 version: "3.3"
 services:
   $$cap_appname-redis:
@@ -12,12 +9,12 @@ services:
   $$cap_appname-db:
     image: ghcr.io/hakaiinstitute/cde-database:$$cap_branch
     ports:
-      - "${DB_PORT:-5432}:${DB_PORT:-5432}"
+      - "$$cap_db_port:$$cap_db_port"
     environment:
-      - POSTGRES_DB: $$cap_db_name
-      - POSTGRES_USER: $$cap_db_user
-      - POSTGRES_PASSWORD: $$cap_db_password
-      - PGPORT: $$cap_db_port
+      POSTGRES_DB: $$cap_db_name
+      POSTGRES_USER: $$cap_db_user
+      POSTGRES_PASSWORD: $$cap_db_password
+      PGPORT: $$cap_db_port
     volumes:
       - $$cap_appname-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -49,16 +46,18 @@ services:
 
   $$cap_appname-nginx:
     image: ghcr.io/hakaiinstitute/cde-nginx:$$cap_branch
+    environment:
+      port: $$cap_nginx_port
     depends_on:
       - $$cap_appname-web-api
     ports:
-      - "$NGINX_PORT:4000"
-      
+      - "$$cap_nginx_port:4000"
+
   $$cap_appname-frontend:
     image: ghcr.io/hakaiinstitute/cde-frontend:$$cap_branch
     environment:
-      - "API_URL=$API_URL:-http://localhost:8098/api}"
-      - "BASE_URL=${BASE_URL:-http://localhost:8098}"
+      API_URL: $$cap_appname.$$cap_root_domain/api
+      BASE_URL: $$cap_appname.$$cap_root_domain
     expose:
       - 80
     depends_on:
@@ -93,33 +92,30 @@ caproverOneClickApp:
     start: CDE Data Explorer deployment
     end: Docker Compose is deployed.
   variables:
-    - id: $$cap_branch
+    - id: '$$cap_branch'
       label: Branch
       description: The branch to deploy
-      type: string
-      default: caprover-deploy
-    - id: $$cap_db_user
+      defaultValue: caprover-deploy
+    - id: '$$cap_db_user'
       label: Database User
       description: The user to connect to the database
-      type: string
-      default: postgres
-    - id: $$cap_db_password 
+      defaultValue: postgres
+    - id: '$$cap_db_password'
       label: Database Password
       description: The password to connect to the database
-      type: string
-      default: password
-    - id: $$cap_db_name
+      defaultValue: password
+    - id: '$$cap_db_name'
       label: Database Name
       description: The name of the database
-      type: string
-      default: cde
-    - id: $$cap_db_port
+      defaultValue: cde
+    - id: '$$cap_db_port'
       label: Database Port
       description: The port to connect to the database
-      type: string
-      default: 5432
-    - id: $$cap_api_url
-      label: API URL
-      description: The URL of the API
-      type: string
-      default: http://localhost:8098/api
+      defaultValue: 5432
+      validRegex: /^[0-9]+$/
+    - id: '$$cap_nginx_port'
+      label: Nginx Port
+      description: The port to connect to the NGINX server
+      defaultValue: 8098
+      validRegex: /^[0-9]+$/
+      
