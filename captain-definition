@@ -14,7 +14,7 @@ services:
       POSTGRES_DB: $$cap_db_name
       POSTGRES_USER: $$cap_db_user
       POSTGRES_PASSWORD: $$cap_db_password
-      PGPORT: $$cap_db_port
+      POSTGRES_PORT: $$cap_db_port
     volumes:
       - $$cap_appname-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -83,12 +83,12 @@ services:
       - $$cap_appname-harvester-cache:/usr/src/app/harvester_cache
       - $$cap_appname-harvest:/usr/src/app/harvest
     environment:
-      - DB_HOST: srv-captain--$$cap_appname
-      - DB_PORT: $$cap_db_port
-      - DB_NAME: $$cap_db_name
-      - DB_USER: $$cap_db_user
-      - DB_PASSWORD: $$cap_db_password
-      - ENVIRONMENT: $$cap_appname
+      DB_HOST: srv-captain--$$cap_appname
+      DB_PORT: $$cap_db_port
+      DB_NAME: $$cap_db_name
+      DB_USER: $$cap_db_user
+      DB_PASSWORD: $$cap_db_password
+      ENVIRONMENT: $$cap_appname
 
 volumes:
   postgres-data:

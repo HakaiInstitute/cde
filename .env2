@@ -1,0 +1,34 @@
+# Harvester, API, Download scheduler
+DB_NAME=cde2
+DB_USER=postgres
+DB_PASSWORD=password
+
+# API and scheduler use internal (docker compose) host name
+# If the API and DB are both inside docker, this should be 'db'
+DB_HOST=db2
+
+# host name from outside docker, harvester runs outside docker and connect to the DB directly
+DB_HOST_EXTERNAL=localhost
+
+# API
+API_URL=http://localhost:8098/api
+BASE_URL=http://localhost:8098
+REDIS_HOST=redis
+
+# Download scheduler
+DOWNLOAD_WAF_URL=https://pac-dev2.cioos.org/images/ceda/
+CREATE_PDF=False
+
+# path inside docker
+DOWNLOADS_FOLDER=./downloads
+# GMAIL_USER=example@example.com
+# GMAIL_PASSWORD=password
+
+# For Sentry etc
+ENVIRONMENT=development
+
+# Use 'postgis' for x86, 'odidev' for ARM
+DOCKER_POSTGIS_REPO=postgis
+# DOCKER_POSTGIS_REPO=odidev
+
+NGINX_PORT=8098
