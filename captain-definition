@@ -30,6 +30,13 @@ services:
     depends_on:
       - $$cap_appname-db
       - $$cap_appname-redis
+    environment:
+      DB_HOST: srv-captain--$$cap_appname
+      DB_NAME: $$cap_db_name
+      DB_USER: $$cap_db_user
+      DB_PASSWORD: $$cap_db_password
+      DB_PORT: $$cap_db_port
+      REDIS_HOST: srv-captain--$$cap_appname-redis
     deploy:
       replicas: 2
     restart: always
