@@ -86,7 +86,6 @@ services:
     depends_on:
       - $$cap_appname-db
     volumes:
-      # - $$cap_appname-harvest-config.yaml:/usr/src/app/harvest_config.yaml # configuration file use by the harvester
       - $$cap_appname-harvester-cache:/usr/src/app/harvester_cache
       - $$cap_appname-harvest:/usr/src/app/harvest
     environment:
@@ -96,6 +95,7 @@ services:
       DB_USER: $$cap_db_user
       DB_PASSWORD: $$cap_db_password
       ENVIRONMENT: $$cap_appname
+      HARVESTER_CONFIG_FILE: $$cap_harvest_config_file
 
 volumes:
   postgres-data:
@@ -135,4 +135,8 @@ caproverOneClickApp:
       description: The port to connect to the NGINX server
       defaultValue: 8098
       validRegex: /^[0-9]+$/
+    - id: '$$cap_harvest_config_file'
+      label: Harvester Config File
+      description: The configuration file for the harvester
+      defaultValue: harvest_config.yaml
       
