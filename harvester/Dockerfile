@@ -4,6 +4,7 @@ WORKDIR /usr/src/app
 
 COPY ./harvester ./harvester
 COPY ./db-loader ./db-loader
+COPY harvest_config*.yaml ./
 
 RUN pip install -q ./db-loader ./harvester
 
