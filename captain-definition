@@ -1,0 +1,142 @@
+captainVersion: 4
+version: "3.3"
+services:
+  $$cap_appname-redis:
+    image: ghcr.io/hakaiinstitute/cde-redis:$$cap_branch
+    expose:
+      - 6379
+  
+  $$cap_appname-db:
+    image: ghcr.io/hakaiinstitute/cde-database:$$cap_branch
+    ports:
+      - "$$cap_db_port:$$cap_db_port"
+    environment:
+      POSTGRES_DB: $$cap_db_name
+      POSTGRES_USER: $$cap_db_user
+      POSTGRES_PASSWORD: $$cap_db_password
+      POSTGRES_PORT: $$cap_db_port
+    volumes:
+      - $$cap_appname-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", $$cap_db_name, "-U", $$cap_db_user]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  $$cap_appname-web-api:
+    image: ghcr.io/hakaiinstitute/cde-web-api:$$cap_branch
+    expose:
+      - 4000
+    depends_on:
+      - $$cap_appname-db
+      - $$cap_appname-redis
+    environment:
+      DB_HOST: srv-captain--$$cap_appname
+      DB_NAME: $$cap_db_name
+      DB_USER: $$cap_db_user
+      DB_PASSWORD: $$cap_db_password
+      DB_PORT: $$cap_db_port
+      REDIS_HOST: srv-captain--$$cap_appname-redis
+    deploy:
+      replicas: 2
+    restart: always
+  
+  $$cap_appname-scheduler:
+    image: ghcr.io/hakaiinstitute/cde-download-scheduler:$$cap_branch
+    environment:
+      ENVIRONMENT: $$cap_appname.$$cap_root_domain
+      DB_HOST: srv-captain--$$cap_appname
+      DB_NAME: $$cap_db_name
+      DB_USER: $$cap_db_user
+      DB_PASSWORD: $$cap_db_password
+      DB_PORT: $$cap_db_port
+    depends_on:
+      - $$cap_appname-db
+    caproverExtra:
+      notExposeAsWebApp: 'true'
+    deploy:
+      replicas: 2
+    volumes:
+      - $$cap_appname-downloads:/usr/src/app/downloads
+    restart: always
+
+  $$cap_appname-nginx:
+    image: ghcr.io/hakaiinstitute/cde-nginx:$$cap_branch
+    environment:
+      port: $$cap_nginx_port
+    depends_on:
+      - $$cap_appname-web-api
+    ports:
+      - "$$cap_nginx_port:4000"
+
+  $$cap_appname-frontend:
+    image: ghcr.io/hakaiinstitute/cde-frontend:$$cap_branch
+    environment:
+      API_URL: $$cap_appname.$$cap_root_domain/api
+      BASE_URL: $$cap_appname.$$cap_root_domain
+    expose:
+      - 80
+    depends_on:
+      - $$cap_appname-web-api
+
+  $$cap_appname-harvester:
+    image: ghcr.io/hakaiinstitute/cde-harvester:$$cap_branch
+    profiles:
+      - tools
+    depends_on:
+      - $$cap_appname-db
+    volumes:
+      - $$cap_appname-harvester-cache:/usr/src/app/harvester_cache
+      - $$cap_appname-harvest:/usr/src/app/harvest
+    environment:
+      DB_HOST: srv-captain--$$cap_appname
+      DB_PORT: $$cap_db_port
+      DB_NAME: $$cap_db_name
+      DB_USER: $$cap_db_user
+      DB_PASSWORD: $$cap_db_password
+      ENVIRONMENT: $$cap_appname
+      HARVESTER_CONFIG_FILE: $$cap_harvest_config_file
+
+volumes:
+  postgres-data:
+  redis-data:
+
+caproverOneClickApp:
+  displayName: Ocean Data Explorer
+  isOfficial: false
+  description: A map based data explorer for ocean data from the Hakai Institute
+  instructions:
+    start: CDE Data Explorer deployment
+    end: Docker Compose is deployed.
+  variables:
+    - id: '$$cap_branch'
+      label: Branch
+      description: The branch to deploy
+      defaultValue: caprover-deploy
+    - id: '$$cap_db_user'
+      label: Database User
+      description: The user to connect to the database
+      defaultValue: postgres
+    - id: '$$cap_db_password'
+      label: Database Password
+      description: The password to connect to the database
+      defaultValue: password
+    - id: '$$cap_db_name'
+      label: Database Name
+      description: The name of the database
+      defaultValue: cde
+    - id: '$$cap_db_port'
+      label: Database Port
+      description: The port to connect to the database
+      defaultValue: 5432
+      validRegex: /^[0-9]+$/
+    - id: '$$cap_nginx_port'
+      label: Nginx Port
+      description: The port to connect to the NGINX server
+      defaultValue: 8098
+      validRegex: /^[0-9]+$/
+    - id: '$$cap_harvest_config_file'
+      label: Harvester Config File
+      description: The configuration file for the harvester
+      defaultValue: harvest_config.yaml
+      
