@@ -10,9 +10,10 @@ setup(
     packages=["cde_db_loader"],
     install_requires=[
         "pandas<2.0.0",
-        "sqlalchemy==1.4.16",
+        "sqlalchemy<2.0.0",
         "psycopg2-binary",
         "python-dotenv",
         "numpy",
+        "sentry_sdk",
     ],
 )
