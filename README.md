@@ -1,4 +1,6 @@
-# CDE - CIOOS Exploration and Data Discovery
+# CDE - CIOOS Exploration and Data Discovery (Archived)
+
+This repo is no longer maintained and is preserved for historical purpose only. CIOOS has continued development of this app at https://github.com/cioos-siooc/explore-cioos Please see the CIOOS repo for all of their great work building on this application.
 
 [![Test](https://github.com/HakaiInstitute/cde/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/HakaiInstitute/cde/actions/workflows/build_and_test.yaml)
 
